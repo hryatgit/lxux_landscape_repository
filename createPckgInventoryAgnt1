@@ -1,0 +1,139 @@
+#! /usr/bin/env bash
+
+
+
+OUTPUT_FILE="/tmp/$(hostname)-$$.pckgList"
+ERROR_FILE="/tmp/$(hostname)-$$.pckgList.Err"
+
+>OUTPUT_FILE
+>ERROR_FILE
+exec	1>$OUTPUT_FILE
+exec	2>$ERROR_FILE
+
+################ BEGIN FUNCTIONs ################
+function onExit() {
+	[ $DONE  -eq 1 ] \
+	&& putsTimeStampObj "__ENDofFile" "$(hostname)" "pckgList" "$(date)" \
+	|| printErr "premature exit" 
+}
+
+function onErr() {
+	LASTLINE=$1
+	LASTErrCode=$2
+        printErr "LASTLINE=$LASTLINE, LASTErrCode=$LASTErrCode"
+}
+
+function printErr() {
+	MSG=$1
+	echo "ERROR: $MSG" >&2
+}
+
+function printInfo() {
+	MSG=$1
+	echo "INFO: $MSG" >&1
+}
+
+function printData() {
+	MSG=$1
+	echo "DATA: $MSG" >&1
+}
+
+function putsDistrObj() {
+	name=$1; version=$2; MNGR=$3
+	STR="\"distribution\" : [ { \
+\"name\" : \"$name\", \
+\"release\" : \"$version\" \
+\"pckg_mngr\" : \"$MNGR\" \
+} ]"
+	printData "$STR"
+}
+	
+function putsTimeStampObj() {
+	stamp=$1; host=$2; content=$3; stamptime=$4
+	STR="\"timestamp\" : [ { \
+\"stamp\" : \"$stamp\", \
+\"host\" : \"$host\", \
+\"content\" : \"$content\", \
+\"stamptime\" : \"$stamptime\" \
+} ]"
+	printInfo "$STR"
+}
+
+function identifyOS() {
+	declare -a OS_LIST=(
+	'UBUNTU' 'SUSE' 'DEBIAN' 'REDHAT' \
+	'CENTOS' 'RED HAT' 'MINT' \
+	'FEDORA' 'PUPPY' 'SLACKWARE' 'ARCH')
+
+	i=0
+
+	OSCAPS="$(uname -a | dd conv=ucase 2>/dev/null)"
+	while [ $i -lt ${#OS_LIST[@]} ]
+	do
+        	LINUX_OS="${OS_LIST[$i]}"
+		TST=$(echo "$OSCAPS" | grep "$LINUX_OS")
+		[ -z "$TST" ] && i=$(expr $i + 1) || break
+	done
+
+	[ $i -eq ${#OS_LIST[@]} ] && \
+	LINUX_OS="$(grep ^ID= /etc/os-release | cut -d '"' -f2 | dd conv=ucase 2>/dev/null)"
+	echo "$LINUX_OS" | tr ' ' '_'
+}
+
+function identifyRelease() {
+	OS="$1"
+### possible options
+### FILES="/etc/issue /etc/debian_version /proc/version /etc/os-release /etc/debian_release"
+KEYWORD="VERSION="
+R_INF_FILE="/etc/os-release"
+	case "$OS" in
+		*)	FILED=$(cat $R_INF_FILE | dd conv=ucase 2>/dev/null | grep "$KEYWORD")
+			VERSION=$(echo $FILED | cut -d '"' -f2 | tr ' ' '_')
+		;;
+	esac
+	echo $VERSION | tr ' ' '_'
+}
+
+function identifyPckgMngr() {
+	OS=$1
+	### CMNDS="hostnamectl lsb_release"
+	case $OS in
+		CENTOS) 
+			CMD="$(which yum>/dev/null && echo "yum list all")"
+		;;
+		SLES)
+			CMD="$(which rpm>/dev/null && echo "rpm -qa")"
+		;;
+		UBUNTU|DEBIAN)	CMD="$(which dpkg-query>/dev/null && echo "dpkg-query -l")"
+		;;
+	esac
+	echo $CMD	
+}
+
+################ END FUNCTIONs ################
+
+################ BEGIN BODY    ################
+trap 'onExit' EXIT
+trap 'onErr ${LINENO} $?' ERR
+
+
+DONE=0
+putsTimeStampObj "BEGINofFile" "$(hostname)" "pckgList" "$(date)"
+
+### system ID
+LINUX_DISTRIBUTER="$(identifyOS)"
+LINUX_VERSION="$(identifyRelease $LINUX_DISTRIBUTER)"
+PCKG_MNGR="$(identifyPckgMngr $LINUX_DISTRIBUTER)"
+
+[ ! -z "$PCKG_MNGR" ] && LSBOK=1 || LSBOK=0
+[ $LSBOK -eq 0 ] && printErr \
+"CMD_NOT_FOUND: <$LINUX_DISTRIBUTER::$LINUX_VERSION::$PCKG_MNGR>" \
+>&2 && DONE=1 && exit
+
+
+## DISTR_NAME=$(cutFieldsByD ':' "$DISTRIBUTOR" 2)
+## VERSION=$(cutFieldsByD ':' "$RELEASE" 2)
+
+putsDistrObj "$LINUX_DISTRIBUTER" "$LINUX_VERSION" "$PCKG_MNGR"
+
+DONE=1

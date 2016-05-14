@@ -1,0 +1,42 @@
+#! /usr/bin/env bash
+
+ARGS=$#
+HOSTLIST=$1
+CHECKSUM=$2
+
+
+MYNAME=$(basename $0)
+#HOSTLIST="hostList"
+RMT_SCRIPT="createListsAgnt1"
+REPORTDIR=/tmp/REPORTS
+
+[ ! -d $REPORTDIR ] && mkdir -p $REPORTDIR
+
+exec 3<"$HOSTLIST"
+
+AUTH_PREF="/home/hry"
+
+echo "$(date) script $MYNAME started"
+
+
+while IFS=$' \t' read -r host authFile || [[ -n "$line" ]]
+do
+	### echo "line:: $authFile $host"
+	### read server list
+	echo "======================="
+	### ditribute and start Agnt1 
+	scp -i /$AUTH_PREF/$authFile $RMT_SCRIPT $host:/tmp
+	ssh -i /$AUTH_PREF/$authFile $host \
+	"echo -e '$(date) \c'; echo on \$(hostname) starting $RMT_SCRIPT; /tmp/$RMT_SCRIPT" \
+	< /dev/null
+	echo "$(date) $RMT_SCRIPT done"
+	echo "-----------------------"
+	echo "$(date) fetch reports from $host"
+	### for each listed server instance
+	### fetch the fruits
+	scp -i /$AUTH_PREF/$authFile $host:/tmp/*.pckgList* $REPORTDIR
+	ssh -i /$AUTH_PREF/$authFile $host "rm /tmp/*.pckgList*" \
+	< /dev/null
+done <&3
+echo "-----------------------"
+echo "$(date) script $MYNAME done"

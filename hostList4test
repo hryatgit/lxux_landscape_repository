@@ -1,0 +1,8 @@
+centos@ec2-52-38-77-194.us-west-2.compute.amazonaws.com blackmag.pem
+admin@ec2-52-90-2-52.compute-1.amazonaws.com debian.pem
+ec2-user@ec2-52-38-54-80.us-west-2.compute.amazonaws.com	blackmag.pem
+ubuntu@ec2-52-35-96-156.us-west-2.compute.amazonaws.com blackmag.pem
+ec2-52-39-74-235.us-west-2.compute.amazonaws.com blackmag.pem
+ubuntu@ec2-52-39-99-201.us-west-2.compute.amazonaws.com blackmag.pem
+ec2-52-26-71-82.us-west-2.compute.amazonaws.com blackmag.pem
+blackmag

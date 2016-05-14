@@ -1,0 +1,29 @@
+#! /bin/bash
+
+ARGS=$#
+SERVERLIST=$1
+ALLPARTS_T=$2
+ALLPARTS_B=$3
+MAXPARTS=$4
+[ $ARGS -ne 4 ] && echo "usage: $0 SERVERLIST ALLPARTS_T ALLPARTS_B MAXPARTS" && exit
+
+[ ! -d /tmp/LOG ] && mkdir /tmp/LOG
+### exec 1>/tmp/LOG/log$$ 2>&1
+echo "$(date) $$ started $ALLPARTS"
+
+TODO=$(expr  $(expr $ALLPARTS_B - $ALLPARTS_T) + 1)
+[ $TODO -le $MAXPARTS ] && \
+echo "======> RUNING: $TODO [$ALLPARTS_T ... $ALLPARTS_B]" \
+&& exit
+
+
+TODO1=$(expr $TODO / 2)
+TODO2=$(expr $TODO - $TODO1)
+PART1_T=$ALLPARTS_T
+PART1_B=$( expr $(expr $ALLPARTS_T + $TODO1) - 1)
+PART2_T=$( expr $(expr $ALLPARTS_B - $TODO2) + 1)
+PART2_B=$ALLPARTS_B
+[ $TODO1 -ne 0 ] && $0 $SERVERLIST $PART1_T $PART1_B $MAXPARTS &	
+[ $TODO2 -ne 0 ] && $0 $SERVERLIST $PART2_T $PART2_B $MAXPARTS &	
+
+###ALLPARTS echo "$(date) $$ terminated"

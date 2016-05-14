@@ -1,0 +1,54 @@
+#! /usr/bin/env bash
+
+ARGS=$#
+HOSTLIST=$1
+MYNAME=$(basename $0)
+WRKDIR=$(dirname $0)
+AUTH_REP=/home/hry/.ssh
+MAPPER="createListsMapper"
+
+usage() {
+	echo "usage: $MYNAME file_serverList"
+	[ $ARGS -eq 0 ] && echo "(too few arguments)" \
+	|| echo "(too many arguments)"
+}
+
+putsMsg() {
+
+	MSG=$1
+	echo "$(date): $MSG"
+}
+
+checkFile() {
+	F=$1
+	[ ! -r $F ] && putsMsg "file: read permissions ($F)" \
+	&& exit
+}
+
+chckContent() {
+	F=$1
+	LINES=$(cat $F | wc -l)
+	[ $LINES -eq 0 ] && putsMsg "no linefeeds ($F)" \
+	&& exit
+
+	cat $F | while read HOST authFile rest
+	do
+		[ ! -r $PRREF_AUTH_F/$authFile ] && putsMsg "server: $HOST, authFile -r ???" \
+		&& exit
+	done
+}
+### ================ BODY ==========================
+[ $ARGS -ne 1 ] && usage && exit
+checkFile $HOSTLIST		### read permisions ???
+chckContent $HOSTLIST		### authorization files ???
+
+LINES2DO=$(cat $F | wc -l)	### all jobs
+
+### run the job
+STARTINGLINE=1
+SERIALIZATION_FCTR=1		### 1 = all parallel, 2 = 1/2, 3 = 1/3 ... and so on
+
+$WRKDIR/$MAPPER $HOSTLIST $STARTINGLINE $LINES2DO $SERIALIZATION_FCTR
+
+sleep 5
+putsMsg "$MYNAME done"
