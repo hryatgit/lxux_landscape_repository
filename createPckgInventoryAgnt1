@@ -14,7 +14,7 @@ exec	2>$ERROR_FILE
 function onExit() {
 	[ $DONE  -eq 1 ] \
 	&& putsTimeStampObj "__ENDofFile" "$(hostname)" "pckgList" "$(date)" \
-	|| printErr "premature exit" 
+	|| printErr "interception exit, job incomplete" 
 }
 
 function onErr() {

@@ -1,20 +1,36 @@
 #! /bin/bash
 
-ARGS=$#
-SERVERLIST=$1
-ALLPARTS_T=$2
-ALLPARTS_B=$3
-MAXPARTS=$4
-[ $ARGS -ne 4 ] && echo "usage: $0 SERVERLIST ALLPARTS_T ALLPARTS_B MAXPARTS" && exit
+source $(dirname $0)/commonHeader.sh
 
-[ ! -d /tmp/LOG ] && mkdir /tmp/LOG
-### exec 1>/tmp/LOG/log$$ 2>&1
-echo "$(date) $$ started $ALLPARTS"
+### ==================================================================
+### ================  LOCAL FUNCTION PART   ==========================
+###
+usage() {
+	printErr "usage: $MYNAME $SERVERLIST ALLPARTS_T ALLPARTS_B MAXPARTS" 
+}
+### ================ END LOCAL FUNCTION PART   =======================
+### ==================================================================
 
-TODO=$(expr  $(expr $ALLPARTS_B - $ALLPARTS_T) + 1)
+
+
+### ==================================================================
+### ================         BODY        =============================
+
+SERVERLIST=$1; ALLPARTS_T=$2; ALLPARTS_B=$3; MAXPARTS=$4
+
+
+[ $ARGS -ne 4 ] && usage && exitOK
+
+[ ! -d /tmp/LOG ] && mkdir /tmp/LOG 
+[ ! -d /tmp/LOG ] && exitOK
+
+printInfo "started $ALLPARTS_T...$ALLPARTS_B, ($MAXPARTS)"
+
+TODO=$(( (( $ALLPARTS_B - $ALLPARTS_T)) + 1))
+
 [ $TODO -le $MAXPARTS ] && \
-echo "======> RUNING: $TODO [$ALLPARTS_T ... $ALLPARTS_B]" \
-&& exit
+printInfo "REMOTE: $TODO [$ALLPARTS_T ... $ALLPARTS_B]" \
+&& DONE=1 && exit
 
 
 TODO1=$(expr $TODO / 2)
@@ -23,7 +39,10 @@ PART1_T=$ALLPARTS_T
 PART1_B=$( expr $(expr $ALLPARTS_T + $TODO1) - 1)
 PART2_T=$( expr $(expr $ALLPARTS_B - $TODO2) + 1)
 PART2_B=$ALLPARTS_B
-[ $TODO1 -ne 0 ] && $0 $SERVERLIST $PART1_T $PART1_B $MAXPARTS &	
-[ $TODO2 -ne 0 ] && $0 $SERVERLIST $PART2_T $PART2_B $MAXPARTS &	
-
-###ALLPARTS echo "$(date) $$ terminated"
+[ $TODO1 -ne 0 ] && $0 $SERVERLIST $PART1_T $PART1_B $MAXPARTS &
+RETV1=$?
+[ $TODO2 -ne 0 ] && $0 $SERVERLIST $PART2_T $PART2_B $MAXPARTS &
+RETV2=$?
+[ $TODO1 -ne 0 ] && RETV1=1
+[ $TODO2 -ne 0 ] && RETV2=1
+[ $RETV1 -eq 1 -a $RETV2 -eq 1 ] && DONE=1

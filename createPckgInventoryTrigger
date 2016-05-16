@@ -1,54 +1,83 @@
 #! /usr/bin/env bash
 
-ARGS=$#
-HOSTLIST=$1
-MYNAME=$(basename $0)
-WRKDIR=$(dirname $0)
-AUTH_REP=/home/hry/.ssh
-MAPPER="createListsMapper"
+source $(dirname $0)/commonHeader.sh
 
+### ==================================================================
+### ================  LOCAL FUNCTION PART   ==========================
 usage() {
-	echo "usage: $MYNAME file_serverList"
+	echo "usage: $MYNAME serverListFile"
 	[ $ARGS -eq 0 ] && echo "(too few arguments)" \
 	|| echo "(too many arguments)"
-}
-
-putsMsg() {
-
-	MSG=$1
-	echo "$(date): $MSG"
-}
-
-checkFile() {
-	F=$1
-	[ ! -r $F ] && putsMsg "file: read permissions ($F)" \
-	&& exit
 }
 
 chckContent() {
 	F=$1
 	LINES=$(cat $F | wc -l)
-	[ $LINES -eq 0 ] && putsMsg "no linefeeds ($F)" \
-	&& exit
+	[ $LINES -eq 0 ] && printInfo "structure requered (LF) in $F" \
+	&& exitOK
 
-	cat $F | while read HOST authFile rest
+	while read HOST authFile comments
 	do
-		[ ! -r $PRREF_AUTH_F/$authFile ] && putsMsg "server: $HOST, authFile -r ???" \
-		&& exit
-	done
+		[ -z "$authFile" ] \
+		&& printInfo "for host: <$HOST>, missing authFile (filename)" \
+		&& exitOK
+		[ "$authFile" == "N/A" ] && continue
+		[ ! -r $AUTH_REPO/$authFile ] \
+		&& printInfo "server: $HOST, authFile: $authFile missing -r" \
+		&& exitOK
+	done < $F
 }
-### ================ BODY ==========================
-[ $ARGS -ne 1 ] && usage && exit
-checkFile $HOSTLIST		### read permisions ???
-chckContent $HOSTLIST		### authorization files ???
 
-LINES2DO=$(cat $F | wc -l)	### all jobs
+chckHostListFile() {
+	file="$1"
+	[ ! -f $file ] \
+	&& printInfo "file: <$file> doesn't exist" \
+	&& exitOK
+	[ ! -r $file ] \
+	&& printInfo "file: <$file>, missing read permissions" \
+	&& exitOK
+	return 0
+}
+###
+### ================ END LOCAL FUNCTION PART   =======================
+### ==================================================================
 
-### run the job
-STARTINGLINE=1
-SERIALIZATION_FCTR=1		### 1 = all parallel, 2 = 1/2, 3 = 1/3 ... and so on
+### ==================================================================
+### ================         BODY        =============================
 
-$WRKDIR/$MAPPER $HOSTLIST $STARTINGLINE $LINES2DO $SERIALIZATION_FCTR
+HOSTLIST=$1
+TST_AUTH_REPO="/home/hry/.ssh"
+AUTH_REPO=$TST_AUTH_REPO	### define the *.pom *.pub repoDir here
+RUNMAPPER="createPckgInventoryMapper"
 
-sleep 5
-putsMsg "$MYNAME done"
+printInfo "started"
+
+#####################################
+### check credential & conditions
+#####################################
+
+[ $ARGS -ne 1 ] && usage && exitOK
+
+chckHostListFile "$HOSTLIST"	### acces / permissions r OK ???
+chckContent "$HOSTLIST"		### authorization files accessible ???
+
+MAPS2DO=$(cat $F | wc -l)	### count all jobs, one per line
+				### format: <hostname> <whiteSpace> [ <authFileName> |'N/A' ]
+
+FIRSTLINE=1			### index parameter (here always 1 )
+SERIALIZATION_FCTR=1		### the higher this value the lower is the "parallel effect",
+				### the easier for memory and cpu resource 
+
+#################################################################
+### let's go
+### trigger (spawn) the working job(s) now; mapps will be run
+### local and parallel (simultaneously); each of them installing 
+### and managing one remote running execution agent;
+### in particular $RUNMAPPER spawns MAPS2DO/SERIALIZATION_FCTR
+### number of parallel running processes local on this machine;
+### take care about system recources on this machine
+### (max proc/user, cpu and memory ?)
+
+printInfo "waiting for $RUNMAPPER $HOSTLIST $FIRSTLINE $MAPS2DO $SERIALIZATION_FCTR ....."
+$MYDIR/$RUNMAPPER $HOSTLIST $FIRSTLINE $MAPS2DO $SERIALIZATION_FCTR \
+&& DONE=1
