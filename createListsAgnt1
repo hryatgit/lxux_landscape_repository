@@ -4,6 +4,8 @@
 
 OUTPUT_FILE="/tmp/$(hostname)-$$.pckgList"
 ERROR_FILE="/tmp/$(hostname)-$$.pckgList.Err"
+MYNAME=$(basename $0)
+
 
 >OUTPUT_FILE
 >ERROR_FILE
@@ -135,5 +137,5 @@ PCKG_MNGR="$(identifyPckgMngr $LINUX_DISTRIBUTER)"
 ## VERSION=$(cutFieldsByD ':' "$RELEASE" 2)
 
 putsDistrObj "$LINUX_DISTRIBUTER" "$LINUX_VERSION" "$PCKG_MNGR"
-
+$PCKG_MNGR
 DONE=1
