@@ -2,7 +2,7 @@ onExit() {
         [ $DONE  -eq 1 ] \
         && printInfo "run completed, status OK" && RET=0
         [ $DONE  -ne 1 ] \
-        && printErr "run $$ incomplete, examine log file ($LOGDIR) and start again" && RET=1
+        && printErr "run $$ incomplete, examine log files ($LOGDIR) and start again" && RET=1
 	
 	exit $RET
 }

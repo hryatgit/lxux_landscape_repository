@@ -1,7 +1,12 @@
 ARGS=$#
 MYNAME=$(basename $0)
 MYDIR=$(dirname $0)
-LOGDIR=/tmp/LOG
+
+### ============= customize your env in commonConstats.sh ==========
+source $MYDIR/commonConstats.sh
+### ============= customize your env in commonConstats.sh ==========
+
+LOGDIR=$LOG_DIR
 
 STDOUT_FILE="$LOGDIR/$(hostname)-$MYNAME-$$.log"
 ERROUT_FILE=$STDOUT_FILE.Err
@@ -14,9 +19,11 @@ source $MYDIR/commonFncts.sh
 
 ### ================  COMMON FUNCTION END   ==========================
 ### ==================================================================
-[ ! -d $LOGDIR ] && mkdir $LOGDIR
-[ ! -d $LOGDIR ] && exitOK
+[ ! -d $LOGDIR ] && mkdir -p $LOGDIR
+[ ! -d $LOGDIR ] && printErr "can't create $LOGDIR" && exitOK
 touch $STDOUT_FILE
-touch $ERROUT_FILE
+[ ! -f $STDOUT_FILE ] && printErr "can't create $STDOUT_FILE" && exitOK
+touch $ERROUT_FILE 
+[ ! -f $ERROUT_FILE ] && printErr "can't create $ERROUT_FILE" && exitOK
 exec    1>$STDOUT_FILE
 exec    2>$ERROUT_FILE

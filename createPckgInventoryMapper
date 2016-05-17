@@ -21,16 +21,18 @@ SERVERLIST=$1; ALLPARTS_T=$2; ALLPARTS_B=$3; MAXPARTS=$4
 
 [ $ARGS -ne 4 ] && usage && exitOK
 
-[ ! -d /tmp/LOG ] && mkdir /tmp/LOG 
-[ ! -d /tmp/LOG ] && exitOK
-
 printInfo "started $ALLPARTS_T...$ALLPARTS_B, ($MAXPARTS)"
 
 TODO=$(( (( $ALLPARTS_B - $ALLPARTS_T)) + 1))
+RUNNEXTSTEP="$MYDIR/$INVENTORY"
 
 [ $TODO -le $MAXPARTS ] && \
-printInfo "REMOTE: $TODO [$ALLPARTS_T ... $ALLPARTS_B]" \
-&& DONE=1 && exit
+printInfo "$RUNNEXTSTEP [$ALLPARTS_T ... $ALLPARTS_B]" \
+&& $RUNNEXTSTEP $SERVERLIST $ALLPARTS_T $ALLPARTS_B \
+&& DONE=1 && exit || RUNFAILED=1
+[ $TODO -le $MAXPARTS -a $RUNFAILED -eq 1 ] \
+&& printErr "spin failed [$ALLPARTS_T ... $ALLPARTS_B]" \
+&& exitOK
 
 
 TODO1=$(expr $TODO / 2)
@@ -40,9 +42,10 @@ PART1_B=$( expr $(expr $ALLPARTS_T + $TODO1) - 1)
 PART2_T=$( expr $(expr $ALLPARTS_B - $TODO2) + 1)
 PART2_B=$ALLPARTS_B
 [ $TODO1 -ne 0 ] && $0 $SERVERLIST $PART1_T $PART1_B $MAXPARTS &
-RETV1=$?
+[ $TODO1 -ne 0 ] && RETV1=$? || RETV1=0
+
 [ $TODO2 -ne 0 ] && $0 $SERVERLIST $PART2_T $PART2_B $MAXPARTS &
-RETV2=$?
-[ $TODO1 -ne 0 ] && RETV1=1
-[ $TODO2 -ne 0 ] && RETV2=1
-[ $RETV1 -eq 1 -a $RETV2 -eq 1 ] && DONE=1
+[ $TODO2 -ne 0 ] && RETV2=$? || RETV2=0
+
+[ $RETV1 -eq 1 -o $RETV2 -eq 1 ] && printErr "fork failed" && exitOK
+DONE=1

@@ -46,9 +46,8 @@ chckHostListFile() {
 ### ================         BODY        =============================
 
 HOSTLIST=$1
-TST_AUTH_REPO="/home/hry/.ssh"
-AUTH_REPO=$TST_AUTH_REPO	### define the *.pom *.pub repoDir here
-RUNMAPPER="createPckgInventoryMapper"
+AUTH_REPO=$AUTHORIZATION_FILE_DIR
+RUNMAPPER=$MYDIR/$MAPPER
 
 printInfo "started"
 
@@ -76,7 +75,7 @@ SERIALIZATION_FCTR=1		### the higher this value the lower is the "parallel effec
 ### in particular $RUNMAPPER spawns MAPS2DO/SERIALIZATION_FCTR
 ### number of parallel running processes local on this machine;
 ### take care about system recources on this machine
-### (max proc/user, cpu and memory ?)
+### (max proc/user, fileDescriptos, cpu, memory ?)
 
 printInfo "waiting for $RUNMAPPER $HOSTLIST $FIRSTLINE $MAPS2DO $SERIALIZATION_FCTR ....."
 $MYDIR/$RUNMAPPER $HOSTLIST $FIRSTLINE $MAPS2DO $SERIALIZATION_FCTR \
