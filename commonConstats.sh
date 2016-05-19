@@ -4,3 +4,6 @@ REMOTE_AGENT1="createListsAgnt1"
 LOG_DIR=/tmp/LOG
 MAPPER="createPckgInventoryMapper"
 INVENTORY="createPckgInventory"
+MY_REPO_DIR=/var/LX_UX
+MARKER_DIR=$MY_REPO_DIR/MARKER
+MARKER_SUF=marker

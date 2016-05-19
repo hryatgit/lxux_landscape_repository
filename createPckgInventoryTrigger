@@ -77,6 +77,42 @@ SERIALIZATION_FCTR=1		### the higher this value the lower is the "parallel effec
 ### take care about system recources on this machine
 ### (max proc/user, fileDescriptos, cpu, memory ?)
 
+[ ! -d $MY_REPO_DIR ] && mkdir $MY_REPO_DIR && printInfo "$MY_REPO_DIR created"
+[ ! -d $MY_REPO_DIR ] && printErr "$MY_REPO_DIR create failed" && exitOK
+
+### clean up all old reports
+[  -d $REPORT_DIR ] && rm -r $REPORT_DIR
+printInfo "clean up all old reports in <$REPORT_DIR> done"
+
 printInfo "waiting for $RUNMAPPER $HOSTLIST $FIRSTLINE $MAPS2DO $SERIALIZATION_FCTR ....."
 $MYDIR/$RUNMAPPER $HOSTLIST $FIRSTLINE $MAPS2DO $SERIALIZATION_FCTR \
-&& DONE=1
+&& cp $HOSTLIST $MY_REPO_DIR/$HOSTLIST.job-$$ && DONE=1
+[ ! -d $MARKER_DIR ] && mkdir $MARKER_DIR
+[ ! -d $MARKER_DIR ] && "$MARKER_DIR create failed" && exitOK
+
+exec 1>&9 9>&-			###  Restore stdout and close file descriptor #9
+exec 2>&8 8>&-			###  Restore stderr and close file descriptor #8
+
+RECEIVED_FILES=0
+EXPECTED_FILES=$(cat $MY_REPO_DIR/$HOSTLIST.job-$$ | wc -l)
+LOOP=0
+while [ true ]
+do
+	RECEIVED_FILES=0
+	while read host rest
+	do
+		MARKERMAPING=$MARKER_DIR/$host.$MARKER_SUF
+		[ ! -f $MARKERMAPING ] && continue
+		MARKER=$(cat $MARKERMAPING)
+		[ -f $REPORT_DIR/$MARKER-*.pckgList ] \
+		&& (( RECEIVED_FILES++ ))
+	done <<<"$(cat $MY_REPO_DIR/$HOSTLIST.job-$$)"
+	echo -e "\r$(( LOOP++ )) received/expected: $RECEIVED_FILES/$EXPECTED_FILES \c"
+	[ $RECEIVED_FILES -lt $EXPECTED_FILES ] && sleep 1 || break
+done
+
+while read host rest
+do
+	MARKERMAPING=$MARKER_DIR/$host.$MARKER_SUF
+	mv $MARKERMAPING $MARKERMAPING-$$
+done <<< "$(cat $MY_REPO_DIR/$HOSTLIST.job-$$"

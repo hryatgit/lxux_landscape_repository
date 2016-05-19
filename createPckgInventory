@@ -51,7 +51,18 @@ do
 	echo "agnt for host: $host $authFile"
 	(( i++ ))
 	
+	### create tmp dir for created reports 
+	TMPREPDIR="$REPORTDIR/tmp-$host"
+	[ -d $TMPREPDIR ] && rm -r $TMPREPDIR
+	[ -d $TMPREPDIR ] && printErr "can't rm $TMPREPDIR" && exitOK
+	mkdir $TMPREPDIR
+	[ ! -d $TMPREPDIR ] && printErr "can't create $TMPREPDIR" && exitOK
+
+
 	### ditribute and start Agnt
+
+	MARKER=$(ssh -i /$AUTH_PREF/$authFile $host "hostname" < /dev/null)
+	echo $MARKER > $MARKER_DIR/$host.$MARKER_SUF
 	scp -i /$AUTH_PREF/$authFile $RMT_AGNT1 $host:/tmp
 	ssh -i /$AUTH_PREF/$authFile $host \
 	"echo -e '$(date) \c'; echo on \$(hostname) starting $RMT_AGNT1; /tmp/$RMT_AGNT1" \
@@ -60,9 +71,11 @@ do
 	echo "-----------------------"
 	echo "$(date) fetch reports from $host"
 	### for each listed server instance
-	### fetch the fruits
-	scp -i /$AUTH_PREF/$authFile $host:/tmp/*.pckgList* $REPORTDIR
-	ssh -i /$AUTH_PREF/$authFile $host "rm /tmp/*.pckgList*" \
+	### fetch the reports
+	scp -i /$AUTH_PREF/$authFile $host:/tmp/*.pckgList* $TMPREPDIR && SCP=1 || SCP=0
+	ssh -i /$AUTH_PREF/$authFile $host "rm /tmp/*.pckgList*" 
+	[ $SCP -eq 1 ] && mv $TMPREPDIR/* $REPORTDIR && rmdir $TMPREPDIR || SCP=0
+	[ $SCP -eq 0 ] && printErr "scp failed" && exitOK
 	< /dev/null
 done
 echo "-----------------------"
