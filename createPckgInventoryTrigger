@@ -27,7 +27,7 @@ chckContent() {
 		&& exitOK
 	done < $F
 }
-
+  
 chckHostListFile() {
 	file="$1"
 	[ ! -f $file ] \
@@ -52,7 +52,7 @@ RUNMAPPER=$MYDIR/$MAPPER
 printInfo "started"
 
 #####################################
-### check credential & conditions
+### check credentials & conditions
 #####################################
 
 [ $ARGS -ne 1 ] && usage && exitOK
@@ -63,36 +63,48 @@ chckContent "$HOSTLIST"		### authorization files accessible ???
 MAPS2DO=$(cat $F | wc -l)	### count all jobs, one per line
 				### format: <hostname> <whiteSpace> [ <authFileName> |'N/A' ]
 
-FIRSTLINE=1			### index parameter (here always 1 )
-SERIALIZATION_FCTR=1		### the higher this value the lower is the "parallel effect",
-				### the easier for memory and cpu resource 
+FIRSTLINE=1			### index parameter here (starting status), always 1
+SERIALIZATION_FCTR=1		### the higher SERIALIZATION_FCTR value the lower is 
+				### the "parallel effect", the easier for memory and cpu resource 
 
 #################################################################
 ### let's go
-### trigger (spawn) the working job(s) now; mapps will be run
-### local and parallel (simultaneously); each of them installing 
+### trigger (spawn) the working job(s) now; mapps will be created 
+### (run) local and parallel (simultaneously); each of them installing 
 ### and managing one remote running execution agent;
-### in particular $RUNMAPPER spawns MAPS2DO/SERIALIZATION_FCTR
-### number of parallel running processes local on this machine;
+### in particular $RUNMAPPER spawns MAPS2DO / SERIALIZATION_FCTR
+### number of parallel running processes, all local on this machine;
 ### take care about system recources on this machine
-### (max proc/user, fileDescriptos, cpu, memory ?)
+### (max proc/user, max open fileDescriptos, cpu, memory ?)
 
 [ ! -d $MY_REPO_DIR ] && mkdir $MY_REPO_DIR && printInfo "$MY_REPO_DIR created"
 [ ! -d $MY_REPO_DIR ] && printErr "$MY_REPO_DIR create failed" && exitOK
 
 ### clean up all old reports
-[  -d $REPORT_DIR ] && rm -r $REPORT_DIR
-printInfo "clean up all old reports in <$REPORT_DIR> done"
+[  -d $REPORT_DIR ] && rm -r $REPORT_DIR \
+&& printInfo "clean up in <$REPORT_DIR> done"
 
-printInfo "waiting for $RUNMAPPER $HOSTLIST $FIRSTLINE $MAPS2DO $SERIALIZATION_FCTR ....."
-$MYDIR/$RUNMAPPER $HOSTLIST $FIRSTLINE $MAPS2DO $SERIALIZATION_FCTR \
-&& cp $HOSTLIST $MY_REPO_DIR/$HOSTLIST.job-$$ && DONE=1
+### create dir for name mapping (i.e. FQDN <==> vpn name)
 [ ! -d $MARKER_DIR ] && mkdir $MARKER_DIR
 [ ! -d $MARKER_DIR ] && "$MARKER_DIR create failed" && exitOK
 
-exec 1>&9 9>&-			###  Restore stdout and close file descriptor #9
-exec 2>&8 8>&-			###  Restore stderr and close file descriptor #8
 
+###  start the "master task" (mapper)
+### and save the jobList in job-repository
+printInfo "waiting for $RUNMAPPER $HOSTLIST $FIRSTLINE $MAPS2DO $SERIALIZATION_FCTR ....."
+### start
+$MYDIR/$RUNMAPPER $HOSTLIST $FIRSTLINE $MAPS2DO $SERIALIZATION_FCTR \
+&& cp $HOSTLIST $MY_REPO_DIR/$HOSTLIST.job-$$ 
+
+###  we are done, agents are running now
+###################################################
+
+exec 1>&9 			###  Restore stdout chanal to screen
+exec 2>&8 			###  Restore stderr chanel to screen
+
+### now take a look  and display
+### the grade (x/100%) of activity
+### progress on your screen; 1 says you are done
 RECEIVED_FILES=0
 EXPECTED_FILES=$(cat $MY_REPO_DIR/$HOSTLIST.job-$$ | wc -l)
 LOOP=0
@@ -107,12 +119,19 @@ do
 		[ -f $REPORT_DIR/$MARKER-*.pckgList ] \
 		&& (( RECEIVED_FILES++ ))
 	done <<<"$(cat $MY_REPO_DIR/$HOSTLIST.job-$$)"
-	echo -e "\r$(( LOOP++ )) received/expected: $RECEIVED_FILES/$EXPECTED_FILES \c"
+	echo -e "\rreceived/expected: $RECEIVED_FILES / $EXPECTED_FILES ( time $(( LOOP++ )) ) \c"
 	[ $RECEIVED_FILES -lt $EXPECTED_FILES ] && sleep 1 || break
+echo "errC: $?"
 done
+echo ""
+### check above says we are done, all file arrived
 
+### flip all look up files (host name mapping)
+### as inactive (by convention)
 while read host rest
 do
 	MARKERMAPING=$MARKER_DIR/$host.$MARKER_SUF
 	mv $MARKERMAPING $MARKERMAPING-$$
-done <<< "$(cat $MY_REPO_DIR/$HOSTLIST.job-$$"
+done <<<"$(cat $MY_REPO_DIR/$HOSTLIST.job-$$)"
+
+DONE=1

@@ -22,6 +22,7 @@ exitOK() {
 function printErr() {
         MSG=$1
         echo "ERROR: $(date) $MYNAME $$: $MSG" >&2
+	echo "ERROR: $(date) $MYNAME $$: $MSG" >>$GLOB_ERR_LOG
 }
 
 function printInfo() {

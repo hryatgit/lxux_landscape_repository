@@ -36,22 +36,27 @@ printInfo "started $*"
 
 
 ### read server list
-### echo "line:: $authFile $host"
+### line format: $host $authFile 
 i=0
+### load wrk list into HOSTS/AFILES array
 while IFS=$' \t' read HOSTS[$i] AFILES[$i]
-do (( i++ )); done < <(sed -n "$INDX_T, $INDX_B p" "$HOSTLIST")
+do (( i++ )); done \
+<<<"$(sed -n "$INDX_T, $INDX_B p" "$HOSTLIST")"
 
+### spin the job for each host in HOSTS array
 i=0
 ALNG=$(( ${#HOSTS[@]} - 1 ))
 while [ $i -lt $ALNG ]
 do
+	### i.e. for particular host (server) do following
 	echo "======================="
 	authFile=${AFILES[$i]}
 	host=${HOSTS[$i]}
 	echo "agnt for host: $host $authFile"
 	(( i++ ))
 	
-	### create tmp dir for created reports 
+	### create tmp dir for expected reports 
+	### created on remote server
 	TMPREPDIR="$REPORTDIR/tmp-$host"
 	[ -d $TMPREPDIR ] && rm -r $TMPREPDIR
 	[ -d $TMPREPDIR ] && printErr "can't rm $TMPREPDIR" && exitOK
@@ -59,21 +64,27 @@ do
 	[ ! -d $TMPREPDIR ] && printErr "can't create $TMPREPDIR" && exitOK
 
 
-	### ditribute and start Agnt
+	### distribute and start Agnt on remote host
 
-	MARKER=$(ssh -i /$AUTH_PREF/$authFile $host "hostname" < /dev/null)
+	[ "$authFile" = "N/A" ] && AUTH_OPT="" \
+	|| AUTH_OPT="-i /$AUTH_PREF/$authFile"
+	### make sure you know later the hostname
+	MARKER=$(ssh $AUTH_OPT $host "hostname" < /dev/null)
 	echo $MARKER > $MARKER_DIR/$host.$MARKER_SUF
-	scp -i /$AUTH_PREF/$authFile $RMT_AGNT1 $host:/tmp
-	ssh -i /$AUTH_PREF/$authFile $host \
+	### copy script from here to the remote host
+	scp $AUTH_OPT $RMT_AGNT1 $host:/tmp
+	### start execution on remote host
+	ssh $AUTH_OPT $host \
 	"echo -e '$(date) \c'; echo on \$(hostname) starting $RMT_AGNT1; /tmp/$RMT_AGNT1" \
 	< /dev/null
 	echo "$(date) $RMT_AGNT1 done"
 	echo "-----------------------"
 	echo "$(date) fetch reports from $host"
-	### for each listed server instance
-	### fetch the reports
-	scp -i /$AUTH_PREF/$authFile $host:/tmp/*.pckgList* $TMPREPDIR && SCP=1 || SCP=0
-	ssh -i /$AUTH_PREF/$authFile $host "rm /tmp/*.pckgList*" 
+	### fetch the reports from remote server in to local tmp storage
+	scp $AUTH_OPT $host:/tmp/*.pckgList* $TMPREPDIR && SCP=1 || SCP=0
+	### clean up remote server
+	ssh $AUTH_OPT $host "rm /tmp/*.pckgList*" 
+	### if everything went good mv report files in to final destination place
 	[ $SCP -eq 1 ] && mv $TMPREPDIR/* $REPORTDIR && rmdir $TMPREPDIR || SCP=0
 	[ $SCP -eq 0 ] && printErr "scp failed" && exitOK
 	< /dev/null
