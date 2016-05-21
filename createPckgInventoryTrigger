@@ -117,11 +117,10 @@ do
 		[ ! -f $MARKERMAPING ] && continue
 		MARKER=$(cat $MARKERMAPING)
 		[ -f $REPORT_DIR/$MARKER-*.pckgList ] \
-		&& (( RECEIVED_FILES++ ))
+		&& X=$(( RECEIVED_FILES++ ))
 	done <<<"$(cat $MY_REPO_DIR/$HOSTLIST.job-$$)"
 	echo -e "\rreceived/expected: $RECEIVED_FILES / $EXPECTED_FILES ( time $(( LOOP++ )) ) \c"
 	[ $RECEIVED_FILES -lt $EXPECTED_FILES ] && sleep 1 || break
-echo "errC: $?"
 done
 echo ""
 ### check above says we are done, all file arrived

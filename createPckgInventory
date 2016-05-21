@@ -40,7 +40,7 @@ printInfo "started $*"
 i=0
 ### load wrk list into HOSTS/AFILES array
 while IFS=$' \t' read HOSTS[$i] AFILES[$i]
-do (( i++ )); done \
+do X=$(( i++ )); done \
 <<<"$(sed -n "$INDX_T, $INDX_B p" "$HOSTLIST")"
 
 ### spin the job for each host in HOSTS array
@@ -53,7 +53,7 @@ do
 	authFile=${AFILES[$i]}
 	host=${HOSTS[$i]}
 	echo "agnt for host: $host $authFile"
-	(( i++ ))
+	X=$(( i++ ))
 	
 	### create tmp dir for expected reports 
 	### created on remote server
