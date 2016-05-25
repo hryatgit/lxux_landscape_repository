@@ -133,4 +133,7 @@ do
 	mv $MARKERMAPING $MARKERMAPING-$$
 done <<<"$(cat $MY_REPO_DIR/$HOSTLIST.job-$$)"
 
+[ -f $GLOB_ERR_LOG ] && echo "$(date) see error log in $GLOB_ERR_LOG"
+[ ! -f $GLOB_ERR_LOG ] && echo "$(date) no errors reported"
+
 DONE=1
