@@ -7,6 +7,9 @@ ERROR_FILE="/tmp/$(hostname)-$$.pckgList.Err"
 MYNAME=$(basename $0)
 
 
+[ -f /tmp/*.pckgList ] && rm /tmp/*.pckgList 
+[ -f /tmp/*.pckgList.Err && rm /tmp/*.pckgList.Err
+
 >OUTPUT_FILE
 >ERROR_FILE
 exec	1>$OUTPUT_FILE
@@ -123,19 +126,7 @@ DONE=0
 putsTimeStampObj "BEGINofFile" "$(hostname)" "pckgList" "$(date)"
 
 ### system ID
-LINUX_DISTRIBUTER="$(identifyOS)"
-LINUX_VERSION="$(identifyRelease $LINUX_DISTRIBUTER)"
-PCKG_MNGR="$(identifyPckgMngr $LINUX_DISTRIBUTER)"
+HOST=$(hostname)
+printData "$HOST"
 
-[ ! -z "$PCKG_MNGR" ] && LSBOK=1 || LSBOK=0
-[ $LSBOK -eq 0 ] && printErr \
-"CMD_NOT_FOUND: <$LINUX_DISTRIBUTER::$LINUX_VERSION::$PCKG_MNGR>" \
->&2 && DONE=1 && exit
-
-
-## DISTR_NAME=$(cutFieldsByD ':' "$DISTRIBUTOR" 2)
-## VERSION=$(cutFieldsByD ':' "$RELEASE" 2)
-
-putsDistrObj "$LINUX_DISTRIBUTER" "$LINUX_VERSION" "$PCKG_MNGR"
-$PCKG_MNGR
 DONE=1

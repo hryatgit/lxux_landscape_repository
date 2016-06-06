@@ -67,37 +67,29 @@ do
 	nslookup $host.1>/dev/null 2>&1 && RETV=1 || RETV=0
 	[ $RETV -eq 0 ] printErr "uknown host: $host" && exitOK
 
-
 	### distribute and start Agnt on remote host
 
 	[ "$authFile" = "N/A" ] && AUTH_OPT="" \
 	|| AUTH_OPT="-i /$AUTH_PREF/$authFile"
-
 	### make sure you know later the hostname
-	### MARKER=$($SSH_NOKEY $AUTH_OPT $ZXUSER@$host "hostname" < /dev/null)
-	### echo $MARKER > $MARKER_DIR/$host.$MARKER_SUF
-	[ -f $MARKER_DIR/$host.$MARKER_SUF ] && rm [ -f $MARKER_DIR/$host.$MARKER_SUF ]
-	$SSH_NOKEY $AUTH_OPT $ZXUSER@$host "hostname" \
-	< /dev/null > $MARKER_DIR/$host.$MARKER_SUF 2>/dev/null
-	[ ! -s $MARKER_DIR/$host.$MARKER_SUF ] && printErr "catch MARKER from $host" \
-	&& rm $MARKER_DIR/$host.$MARKER_SUF && exitOK
-
-	### copy script (local) to the remote host
-	$SCP_NOKEY $AUTH_OPT $RMT_AGNT1 $ZXUSER@$host:/tmp
+	MARKER=$(ssh $AUTH_OPT $host "hostname" < /dev/null)
+	echo $MARKER > $MARKER_DIR/$host.$MARKER_SUF
+	### copy script from here to the remote host
+	scp $AUTH_OPT $RMT_AGNT1 $host:/tmp
 	### start execution on remote host
-	$SSH_NOKEY $AUTH_OPT $ZXUSER@$host \
+	ssh $AUTH_OPT $host \
 	"echo -e '$(date) \c'; echo on \$(hostname) starting $RMT_AGNT1; /tmp/$RMT_AGNT1" \
 	< /dev/null
 	echo "$(date) $RMT_AGNT1 done"
 	echo "-----------------------"
-	echo "$(date) fetch reports from $ZXUSER@$host"
+	echo "$(date) fetch reports from $host"
 	### fetch the reports from remote server in to local tmp storage
-	$SCP_NOKEY $AUTH_OPT $ZXUSER@$host:/tmp/*.pckgList* $TMPREPDIR && SCPRET=1 || SCPRET=0
+	scp $AUTH_OPT $host:/tmp/*.pckgList* $TMPREPDIR && SCP=1 || SCP=0
 	### clean up remote server
-	$SSH_NOKEY $AUTH_OPT $ZXUSER@$host "rm /tmp/*.pckgList*" 
+	ssh $AUTH_OPT $host "rm /tmp/*.pckgList*" 
 	### if everything went good mv report files in to final destination place
-	[ $SCPRET -eq 1 ] && mv $TMPREPDIR/* $REPORTDIR && rmdir $TMPREPDIR || SCPRET=0
-	[ $SCPRET -eq 0 ] && printErr "$SCP_NOKEY $host failed" && exitOK
+	[ $SCP -eq 1 ] && mv $TMPREPDIR/* $REPORTDIR && rmdir $TMPREPDIR || SCP=0
+	[ $SCP -eq 0 ] && printErr "scp failed" && exitOK
 	< /dev/null
 done
 echo "-----------------------"

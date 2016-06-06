@@ -21,13 +21,13 @@ exitOK() {
 }
 function printErr() {
         MSG=$1
-        echo "ERROR: $(date) $MYNAME $$: $MSG" >&2
+        echo "ERROR: $(date) $MYNAME $$: $MSG" >&9
 	echo "ERROR: $(date) $MYNAME $$: $MSG" >>$GLOB_ERR_LOG
 }
 
 function printInfo() {
         MSG=$1
-        echo "INFO:  $(date) $MYNAME $$: $MSG" >&1
+        echo "INFO:  $(date) $MYNAME $$: $MSG" >&8
 }
 
 trap 'onExit' EXIT

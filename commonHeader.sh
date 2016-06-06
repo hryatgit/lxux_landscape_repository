@@ -4,6 +4,8 @@ MYDIR=$(dirname $0)
 
 ### ============= customize your env in commonConstats.sh ==========
 source $MYDIR/commonConstats.sh
+source $MYDIR/customCmnds.sh
+
 ### ============= customize your env in commonConstats.sh ==========
 
 LOGDIR=$LOG_DIR
@@ -26,7 +28,9 @@ touch $STDOUT_FILE
 touch $ERROUT_FILE 
 [ ! -f $ERROUT_FILE ] && printErr "can't create $ERROUT_FILE" && exitOK
 
-exec	9>&1           # Link file descriptor #9 with stdout (save stdout)
-exec	8>&2           # Link file descriptor #8 with stderr (save stderr)
-exec    1>$STDOUT_FILE
-exec    2>$ERROUT_FILE
+exec	6>&1           # Link file descriptor #9 now stdout (save stdout)
+exec	7>&2           # Link file descriptor #8 now stderr (save stderr)
+exec	1>&8
+exec	2>&9
+exec    8>$STDOUT_FILE
+exec    9>$ERROUT_FILE

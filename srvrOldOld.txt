@@ -1,0 +1,13 @@
+OLD ENVIRONMENT
+Server Name
+blog­nfs
+buyat­batch
+kremsaapi001
+kremsaapi002
+kremsaimgc001
+maindb01
+maindb04
+maindb05
+tracking02
+ns10
+tickets

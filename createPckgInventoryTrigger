@@ -54,7 +54,7 @@ printInfo "started"
 #####################################
 ### check credentials & conditions
 #####################################
-
+[ -f $MARKER_DIR/* ] && rm $MARKER_DIR/*
 [ $ARGS -ne 1 ] && usage && exitOK
 
 chckHostListFile "$HOSTLIST"	### acces / permissions r OK ???
@@ -99,8 +99,8 @@ $MYDIR/$RUNMAPPER $HOSTLIST $FIRSTLINE $MAPS2DO $SERIALIZATION_FCTR \
 ###  we are done, agents are running now
 ###################################################
 
-exec 1>&9 			###  Restore stdout chanal to screen
-exec 2>&8 			###  Restore stderr chanel to screen
+exec 1>&6 			###  Restore stdout chanal to screen
+exec 2>&7 			###  Restore stderr chanel to screen
 
 ### now take a look  and display
 ### the grade (x/100%) of activity
@@ -114,7 +114,9 @@ do
 	while read host rest
 	do
 		MARKERMAPING=$MARKER_DIR/$host.$MARKER_SUF
-		[ ! -f $MARKERMAPING ] && continue
+		[ ! -f $MARKERMAPING ] \
+		&& printInfo "MARKERMAPING miss: $host $(date)" \
+		&& continue
 		MARKER=$(cat $MARKERMAPING)
 		[ -f $REPORT_DIR/$MARKER-*.pckgList ] \
 		&& X=$(( RECEIVED_FILES++ ))
@@ -123,9 +125,9 @@ do
 	[ $RECEIVED_FILES -lt $EXPECTED_FILES ] && sleep 1 || break
 done
 echo ""
-### check above says we are done, all file arrived
+### status above says we are done, all files arrived
 
-### flip all look up files (host name mapping)
+### flip all look up files (host <-> name mapping)
 ### as inactive (by convention)
 while read host rest
 do
