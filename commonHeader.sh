@@ -28,9 +28,7 @@ touch $STDOUT_FILE
 touch $ERROUT_FILE 
 [ ! -f $ERROUT_FILE ] && printErr "can't create $ERROUT_FILE" && exitOK
 
-exec	6>&1           # Link file descriptor #9 now stdout (save stdout)
-exec	7>&2           # Link file descriptor #8 now stderr (save stderr)
-exec	1>&8
-exec	2>&9
+exec	6>&1           # Link file descriptor #6 now stdout (save stdout)
+exec	7>&2           # Link file descriptor #7 now stderr (save stderr)
 exec    8>$STDOUT_FILE
 exec    9>$ERROUT_FILE

@@ -1,0 +1,7 @@
+while read X
+do
+	HOST=$(basename $X .noName)
+	echo "host: $HOST"
+	ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no $ZU@$HOST hostname < /dev/null
+done <<<"$(ls *noName)" 
+

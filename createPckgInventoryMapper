@@ -21,7 +21,7 @@ SERVERLIST=$1; ALLPARTS_T=$2; ALLPARTS_B=$3; MAXPARTS=$4
 
 [ $ARGS -ne 4 ] && usage && exitOK
 
-printInfo "started $ALLPARTS_T...$ALLPARTS_B, ($MAXPARTS)"
+printInfo "started $ALLPARTS_T...$ALLPARTS_B, (max: $MAXPARTS)"
 
 TODO=$(( (( $ALLPARTS_B - $ALLPARTS_T)) + 1))
 RUNNEXTSTEP="$MYDIR/$INVENTORY"
