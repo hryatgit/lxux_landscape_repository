@@ -91,32 +91,5 @@ do
 	[ $OK -eq 0 ] && echo $host > $MARKER_DIR/$host.noName
 	[ $OK -eq 0 ] && printErr "catch MARKER from $host" && exitOK
 
-	### copy script (local) to the remote host
-
-	$SCP_NOKEY $AUTH_OPT $RMT_AGNT1 $ZXUSER@$host:/tmp >/dev/null 2>&1 && SCPRET=1 || SCPRET=0
-	[ $SCPRET -eq 0 ] && printErr "$SCP_NOKEY $host failed" && exitOK
-
-	### start execution on remote host
-	$SSH_NOKEY $AUTH_OPT $ZXUSER@$host \
-	"echo -e '$(date) \c'; echo on \$(hostname) starting $RMT_AGNT1; /tmp/$RMT_AGNT1" \
-	< /dev/null >/dev/null 2>&1
-	printInfo  "$RMT_AGNT1 done"
-	printInfo "fetch reports from $ZXUSER@$host"
-	### fetch the reports from remote server in to local tmp storage
-	MAXATTMP=5
-	i=0
-	while [ $i -lt $MAXATTMP ]
-	do
-		$SCP_NOKEY $AUTH_OPT $ZXUSER@$host:/tmp/*.pckgList* \
-		$TMPREPDIR 1>/dev/null 2>&1 && SCPRET=1 || SCPRET=0
-		X=$(( i++ ))
-		[ $SCPRET -eq 1 ] && break
-	done
-
-	[ $i -gt 1 ] && printInfo  "scp from $host scp_retry: $i"
-	### if everything went good mv report files in to final destination place
-	[ $SCPRET -eq 1 ] && mv $TMPREPDIR/* $REPORTDIR && rmdir $TMPREPDIR || SCPRET=0
-	[ $SCPRET -eq 0 ] && printErr "$SCP_NOKEY $host failed" && exitOK
-	< /dev/null
 done
 DONE=1

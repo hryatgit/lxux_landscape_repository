@@ -100,8 +100,6 @@ $MYDIR/$RUNMAPPER $HOSTLIST $FIRSTLINE $MAPS2DO $SERIALIZATION_FCTR \
 ###  we are done, agents are running now
 ###################################################
 
-sleep 5
-
 exec 1>&6 			###  Restore stdout chanal to screen
 exec 2>&7 			###  Restore stderr chanel to screen
 
@@ -114,11 +112,11 @@ LOOP=0
 while [ true ]
 do
 	CLOUDRESPONSE=$(ls $MARKER_DIR | wc -l)
-	echo -e "\rresponded / expected: $CLOUDRESPONSE / $EXPECTED_FILES ( time $(( LOOP++ )) ) \c"
+	echo -e "\rstatus responded / expected: $CLOUDRESPONSE / $EXPECTED_FILES ( time $(( LOOP++ )) ) \c"
 	[ $CLOUDRESPONSE -lt $EXPECTED_FILES ] && sleep 1 || break
 done
 
-echo "================================"
+echo
 
 EXPECTED_FILES=$( ls $MARKER_DIR/*.$MARKER_SUF | wc -l)
 LOOP=0
@@ -135,7 +133,7 @@ do
 		[ -f $REPORT_DIR/$MARKER-*.pckgList ] \
 		&& X=$(( RECEIVED_FILES++ ))
 	done <<<"$(cat $MY_REPO_DIR/$HOSTLIST.job-$$)"
-	echo -e "\rreceived / expected: $RECEIVED_FILES / $EXPECTED_FILES ( time $(( LOOP++ )) ) \c"
+	echo -e "\rreports received / expected: $RECEIVED_FILES / $EXPECTED_FILES ( time $(( LOOP++ )) ) \c"
 	[ $RECEIVED_FILES -lt $EXPECTED_FILES ] && sleep 1 || break
 done
 echo ""
@@ -149,7 +147,6 @@ do
 	mv $MARKERMAPING $MARKERMAPING-$$
 done <<<"$(cat $MY_REPO_DIR/$HOSTLIST.job-$$)"
 
-[ -f $GLOB_ERR_LOG ] && echo "$(date) see error log in $GLOB_ERR_LOG"
-[ ! -f $GLOB_ERR_LOG ] && echo "$(date) no errors reported"
-
+[ -s $GLOB_ERR_LOG ] && echo "$(date) see error log in $GLOB_ERR_LOG" \
+|| echo "$(date) NO ERRORS REPORTED"
 DONE=1
